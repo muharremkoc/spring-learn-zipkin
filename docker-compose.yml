@@ -1,0 +1,46 @@
+version: '2'
+
+services:
+#  storage:
+#    image: openzipkin/zipkin-cassandra
+#    container_name: mycassandra
+#    # Uncomment to expose the storage port for testing
+#    ports:
+#    - 9042:9042
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    # Environment settings are defined here https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md#environment-variables
+    environment:
+      # - STORAGE_TYPE=cassandra3
+      # Point the zipkin at the storage backend
+     # - CASSANDRA_HOST=storage
+      # Uncomment to enable scribe
+       - SCRIBE_ENABLED=true
+      # Uncomment to enable self-tracing
+       - SELF_TRACING_ENABLED=true
+      # Uncomment to enable debug logging
+       - JAVA_OPTS=-Dlogging.level.zipkin2=INFO
+    ports:
+      # Port used for the Zipkin UI and HTTP Api
+      - 9411:9411
+      # Uncomment if you set SCRIBE_ENABLED=true
+      - 9410:9410
+
+  # Adds a cron to process spans since midnight every hour, and all spans each day
+  # This data is served by http://192.168.99.100:8080/dependency
+  #
+  # For more details, see https://github.com/openzipkin/docker-zipkin-dependencies
+  dependencies:
+    image: openzipkin/zipkin-dependencies
+    container_name: dependencies
+    entrypoint: crond -f
+    environment:
+#      - STORAGE_TYPE=cassandra3
+#      - CASSANDRA_HOST=storage
+      # Uncomment to see dependency processing logs
+       - ZIPKIN_LOG_LEVEL=INFO
+      # Uncomment to adjust memory used by the dependencies job
+       - JAVA_OPTS=-verbose:gc -Xms1G -Xmx1G
+#    depends_on:
+#      - storage
